@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import engine
 from app.models import Base
@@ -6,10 +7,21 @@ from app.gmail_service import get_gmail_service
 from app.email_reader import get_recent_emails
 from app.subscription_detector import find_subscriptions
 from app.recurring_detector import detect_recurring_services
+from fastapi.middleware.cors import CORSMiddleware
+from app.summary import get_dashboard_summary
+from app.spending_detector import detect_spending
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SubTrack Lite")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -81,3 +93,17 @@ def recurring():
     gmail = get_gmail_service()
 
     return detect_recurring_services(gmail)
+
+@app.get("/summary")
+def summary():
+
+    gmail = get_gmail_service()
+
+    return get_dashboard_summary(gmail)
+
+@app.get("/spending")
+def spending():
+
+    gmail = get_gmail_service()
+
+    return detect_spending(gmail)
