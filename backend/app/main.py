@@ -1,17 +1,34 @@
-from fastapi import FastAPI
-import requests
 
-app = FastAPI(title="SubTrack Lite")
+import requests
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(
+    title="SubTrack Lite",
+    description="AI-powered Subscription Tracker",
+    version="1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 translations = {
     "en": {
-        "welcome": "Subscription analysis complete"
+        "welcome": "Subscription analysis complete",
+        "suggestion": "Consider cancelling unused subscriptions."
     },
     "hi": {
-        "welcome": "सब्सक्रिप्शन विश्लेषण पूरा हुआ"
+        "welcome": "सब्सक्रिप्शन विश्लेषण पूरा हुआ",
+        "suggestion": "अनुपयोगी सदस्यताओं को रद्द करने पर विचार करें।"
     },
     "te": {
-        "welcome": "సబ్‌స్క్రిప్షన్ విశ్లేషణ పూర్తయింది"
+        "welcome": "సబ్‌స్క్రిప్షన్ విశ్లేషణ పూర్తయింది",
+        "suggestion": "వినియోగంలో లేని సభ్యత్వాలను రద్దు చేయడం గురించి ఆలోచించండి."
     }
 }
 
@@ -20,8 +37,21 @@ translations = {
 def root():
     return {
         "app": "SubTrack Lite",
-        "status": "running"
+        "status": "running",
+        "features": [
+            "Subscription Analysis",
+            "AI Suggestions",
+            "Hindi Support",
+            "Telugu Support",
+            "Ollama",
+            "BYOK"
+        ]
     }
+
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
 
 
 @app.post("/analyze")
@@ -31,20 +61,32 @@ def analyze(data: dict):
     language = data.get("language", "en")
 
     total = 0
+    subscriptions = []
 
     for line in text.splitlines():
+
         words = line.split()
 
         if len(words) >= 2:
             try:
-                total += int(words[-1])
+                amount = int(words[-1])
+                total += amount
+
+                subscriptions.append({
+                    "name": " ".join(words[:-1]),
+                    "amount": amount
+                })
+
             except:
                 pass
 
+    lang = translations.get(language, translations["en"])
+
     return {
-        "message": translations.get(language, translations["en"])["welcome"],
+        "message": lang["welcome"],
         "monthly_total": total,
-        "suggestion": "Cancel unused subscriptions."
+        "subscriptions": subscriptions,
+        "suggestion": lang["suggestion"]
     }
 
 
@@ -55,6 +97,7 @@ def ai(data: dict):
     provider = data.get("provider", "local")
 
     if provider == "local":
+
         try:
             response = requests.post(
                 "http://localhost:11434/api/generate",
@@ -74,10 +117,23 @@ def ai(data: dict):
         except:
             return {
                 "provider": "ollama",
-                "response": "Ollama not running."
+                "response": "Ollama is not running."
             }
 
+    elif provider == "byok":
+
+        api_key = data.get("api_key")
+
+        if not api_key:
+            return {
+                "error": "API key required."
+            }
+
+        return {
+            "provider": "BYOK",
+            "message": "API key received successfully."
+        }
+
     return {
-        "provider": "BYOK",
-        "message": "Use your own API key."
+        "error": "Unsupported provider."
     }

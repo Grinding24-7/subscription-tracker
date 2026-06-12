@@ -11,3 +11,7 @@ __pycache__/.venv/
 client_secret.json
 __pycache__/
 *.pyc
+
+backend/token.json
+backend/credentials.json
+backend/client_secret.json
