@@ -2,16 +2,7 @@
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.testclient import TestClient
-from backend.app.main import app
 
-client = TestClient(app)
-
-def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-
-    
 app = FastAPI(
     title="SubTrack Lite",
     description="AI-powered Subscription Tracker",
